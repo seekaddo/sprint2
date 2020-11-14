@@ -57,8 +57,8 @@ resource "exoscale_security_group_rule" "promethes" {
   security_group_id = exoscale_security_group.secgroup1.id
   type = "INGRESS"
   cidr = "0.0.0.0/0"
-  start_port = "9090"
-  end_port = "9090"
+  start_port = 9090
+  end_port = 9090
   protocol = "TCP"
   description = "Managed by Only Terraform!"
 }
@@ -147,7 +147,7 @@ resource "exoscale_compute" "prometheus" {
   template_id  = data.exoscale_compute_template.computeTemp.id
   size         = "Micro"
   disk_size    = 10
-  key_pair     = ""
+  state        = "Running"
   security_group_ids = [exoscale_security_group.secgroup1.id]
   user_data = <<EOF
 #!/bin/bash
