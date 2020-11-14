@@ -155,11 +155,8 @@ set -e
 
 sudo apt update
 sudo apt-get -y install prometheus
-sudo echo "[
-  {
-    "targets": [ "localhost:9100" ]
-  }
-]" > /etc/prometheus/custom_servers.json;
+sudo echo "[ { "targets": [ "localhost:9100" ] } ]" > /etc/prometheus/custom_servers.json;
+
 sudo echo "global:
   scrape_interval: 10s
 scrape_configs:
