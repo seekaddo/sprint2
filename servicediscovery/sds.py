@@ -28,21 +28,21 @@ def queryInstances(api_key, api_secret, exoscale_instancepool_id, target_port, e
         pylogger.error("Invalid Zone -- cannot be empty")
         sys.exit(1)
 
-    data = []
+    targetList = []
     for instance in exo.compute.list_instances(zone):
         try:
             instance_pool = instance.instance_pool
             if instance_pool and exoscale_instancepool_id == instance_pool.id:
                 target = {'targets': [instance.ipv4_address + ':' + target_port]}
                 pylogger.info("Targets: {0}".format(target))
-                data.append(target)
+                targetList.append(target)
         except Exception:
             pylogger.error("Something went wrong", exc_info=True)
 
-    pylogger.info("Write targets {0} into {1}".format(data, service_config_file))
+    pylogger.info("Write targets {0} into {1}".format(targetList, service_config_file))
     with open(service_config_file, 'w') as outfile:
         pylogger.info("Overwrite the config.json file with content: {0}".format(outfile))
-        json.dump(data, outfile)
+        json.dump(targetList, outfile)
 
 
 def get_values_from_environment():
@@ -67,7 +67,7 @@ def get_values_from_environment():
             exoscale_zone = value
 
     if not api_key or not api_secret or not exoscale_instancepool_id or not target_port or not exoscale_zone:
-        pylogger.error("Any of these variables is empty api_key:{0}, api_secret:{1}, exoscale_instancepool_id:{2}, "
+        pylogger.error("Invalid input --> empty api_key:{0}, api_secret:{1}, exoscale_instancepool_id:{2}, "
                        "target_port:{3}, exoscale_zone:{4}".format(api_key, api_secret,
                                                                    exoscale_instancepool_id,
                                                                    target_port, exoscale_zone))
@@ -96,5 +96,5 @@ if __name__ == '__main__':
             time.sleep(5)
             pylogger.info("Pulling for the instance list and updating the config file")
         except Exception:
-            pylogger.error("Something went wrong", exc_info=True)
+            pylogger.error("You hit a bad rock", exc_info=True)
 
