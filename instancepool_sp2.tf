@@ -26,9 +26,10 @@ locals {
 }*/
 
 output "vm_list" {
-  value = exoscale_instance_pool.compute_pool.virtual_machines
+  value =  exoscale_instance_pool.compute_pool.virtual_machines
   description = "The list of Instance Pool members (Compute instance names)."
 }
+
 
 # Data section
 data "exoscale_compute_template" "computeTemp" {
@@ -141,6 +142,7 @@ EOF
 
 }
 
+
 resource "exoscale_compute" "prometheus" {
   zone         = local.zone
   display_name = "prometheus-metrics"
@@ -153,27 +155,38 @@ resource "exoscale_compute" "prometheus" {
 #!/bin/bash
 set -e
 
-sudo apt update
-sudo apt-get -y install prometheus
-sudo echo "[ { "targets": [ "localhost:9100" ] } ]" > /etc/prometheus/custom_servers.json;
+# region Install Docker
+apt-get update
+apt-get install -y curl
+curl -fsSL https://get.docker.com -o get-docker.sh
+sh get-docker.sh
 
-sudo echo "global:
+
+sudo touch /tmp/config.json
+
+sudo echo "
+global:
   scrape_interval: 10s
 scrape_configs:
-  - job_name: 'prometheus'
-    scrape_interval: 5s
-    static_configs:
-      - targets: ['localhost:9090']
-  - job_name: Monitoring Server Node Exporter
-    static_configs:
-      - targets:
-          - 'localhost:9100'
-  - job_name: Custom
+  - job_name: Monitor all instance pools
     file_sd_configs:
       - files:
-          - /etc/prometheus/custom_servers.json
-        refresh_interval: 20s" > /etc/prometheus/prometheus.yml;
-sudo systemctl restart prometheus
+          - /srv/service-discovery/config.json
+        refresh_interval: 5s
+" >/prometheus.yml
+
+sudo docker run -d -p 9090:9090 \
+  -v /tmp/config.json:/srv/service-discovery/config.json \
+  -v /prometheus.yml:/etc/prometheus/prometheus.yml \
+  prom/prometheus
+
+sudo docker run -d -v /tmp/config.json:/srv/service-discovery/config.json  \
+  --env EXOSCALE_KEY=${var.exoscale_key} \
+  --env EXOSCALE_SECRET=${var.exoscale_secret} \
+  --env EXOSCALE_INSTANCEPOOL_ID=${exoscale_instance_pool.compute_pool.id} \
+  --env TARGET_PORT=9100 \
+  --env EXOSCALE_ZONE=${local.zone} \
+  seekaddo1/sds:latest
 
 EOF
 }
