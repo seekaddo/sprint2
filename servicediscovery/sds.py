@@ -12,13 +12,12 @@ import pathlib
 import time
 import logging as pylogger
 import sys
-import signal
 
 absolutePath = pathlib.Path(os.path.realpath(__file__)).parent
 service_config_file = os.path.join(absolutePath, 'config.json')
 logpath = os.path.join(absolutePath, 'sds.log')
 pylogger.basicConfig(filename=logpath, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                     level=pylogger.ERROR)
+                     level=pylogger.ERROR | pylogger.INFO | pylogger.WARNING)
 
 
 def queryInstances(api_key, api_secret, exoscale_instancepool_id, target_port, exoscale_zone):
@@ -75,14 +74,10 @@ def get_values_from_environment():
 
     return api_key, api_secret, exoscale_instancepool_id, target_port, exoscale_zone
 
-def clean_up(_signo, _stack_frame):
-    pylogger.warning("Cleaning up container -- no need to delete files exit== 0")
-    sys.exit(0)
-
 
 if __name__ == '__main__':
     pylogger.info("------Start-------------")
-    signal.signal(signal.SIGTERM, clean_up)
+
     pylogger.info("absolutePath:{0} -- wtf log path--- logpath: {1} service_config_file: {2}".format(
         absolutePath, logpath, service_config_file))
     api_key, api_secret, exoscale_instancepool_id, target_port, exoscale_zone = get_values_from_environment()
@@ -97,4 +92,3 @@ if __name__ == '__main__':
             pylogger.info("Pulling for the instance list and updating the config file")
         except Exception:
             pylogger.error("You hit a bad rock", exc_info=True)
-
