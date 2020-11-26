@@ -10,14 +10,35 @@ import os
 import json
 import pathlib
 import time
+import signal
 import logging as pylogger
 import sys
+import os.path
+
+standPath = "/srv/service-discovery"
+
+
+def getConfigPath():
+    if not os.path.exists(standPath):
+        pylogger.error("Standard dir not created by docker.")
+        # It will be nice to recreate the directory but we are confidently stubborn to trust docker
+        return False
+    return True
+
 
 absolutePath = pathlib.Path(os.path.realpath(__file__)).parent
-service_config_file = os.path.join(absolutePath, 'config.json')
-logpath = os.path.join(absolutePath, 'sds.log')
+service_config_file = os.path.join(standPath if getConfigPath() else absolutePath, 'config.json')
+logpath = os.path.join(standPath if getConfigPath() else absolutePath, 'sds.log')
 pylogger.basicConfig(filename=logpath, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                      level=pylogger.ERROR | pylogger.INFO | pylogger.WARNING)
+
+
+def Clean_up(xSignum, xFrame):
+    pylogger.info("Signal received shutdown now signal: ", xSignum)
+    exit(0)
+
+# the container can send only Termin signal that is docker stop
+signal.signal(signal.SIGTERM, Clean_up)  # Used by this script
 
 
 def queryInstances(api_key, api_secret, exoscale_instancepool_id, target_port, exoscale_zone):
@@ -67,8 +88,7 @@ def get_values_from_environment():
 
     if not api_key or not api_secret or not exoscale_instancepool_id or not target_port or not exoscale_zone:
         pylogger.error("Invalid input --> empty api_key:{0}, api_secret:{1}, exoscale_instancepool_id:{2}, "
-                       "target_port:{3}, exoscale_zone:{4}".format(api_key, api_secret,
-                                                                   exoscale_instancepool_id,
+                       "target_port:{3}, exoscale_zone:{4}".format(api_key, api_secret, exoscale_instancepool_id,
                                                                    target_port, exoscale_zone))
         sys.exit(1)
 

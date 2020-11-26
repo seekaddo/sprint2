@@ -2,14 +2,10 @@ FROM python:3
 
 LABEL maintainer="dennis_addo@aol.com"
 
-WORKDIR /srv/service-discovery
-ADD sds.py /srv/service-discovery
-ADD sds.py /tmp/sdd/
-ADD startup.sh /tmp/sdd/
+RUN mkdir -p /srv/service-discovery
+WORKDIR /tmp/service-discovery
+COPY sds.py /tmp/service-discovery
 
-RUN chmod +x /tmp/sdd/startup.sh
-
-RUN pip install exoscale
 
 ENV EXOSCALE_KEY=""
 ENV EXOSCALE_SECRET=""
@@ -17,5 +13,7 @@ ENV EXOSCALE_INSTANCEPOOL_ID=""
 ENV TARGET_PORT=""
 ENV EXOSCALE_ZONE=""
 
+RUN pip install exoscale
+
 #ENTRYPOINT pwd && mv /tmp/sdd/sds.py . && ls -l && python sds.py
-ENTRYPOINT ["/tmp/sdd/startup.sh"]
+ENTRYPOINT ["python","sds.py"]
